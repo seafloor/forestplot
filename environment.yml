@@ -4,3 +4,4 @@ dependencies:
    - pandas
    - numpy
    - matplotlib
+   - jupyter
