@@ -11,6 +11,7 @@ Simple forest plots in python with matplotlib
 - follow code in /examples
 
 **To download and install required packages (shouldn't be necessary as it's just standard scipy):**
+This will also install jupyter notebooks for running examples
 - git clone https://github.com/seafloor/forestplot.git
 - cd forestplot
 - conda env create -f environment.yml
