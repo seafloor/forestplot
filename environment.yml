@@ -1,0 +1,6 @@
+name: forestplot
+channels:
+dependencies:
+   - pandas
+   - numpy
+   - matplotlib
