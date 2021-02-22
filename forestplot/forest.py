@@ -14,7 +14,7 @@ def check_data(data):
 
 def forest_plot(data, auc_col, se_col, to_annotate=None, subset_col=None, fig=None, ax=None, add_legend=True,
                 legend_loc='upper right', hbar_lim=None, xlim=None, fig_shape=None, anot_base=0.15,
-                annot_offset=13, annot_scaler=0.01):
+                annot_offset=13, annot_scaler=0.01, add_ci=True, auc_label=None):
     """
     Basic forest plots for meta analyses
 
@@ -50,6 +50,10 @@ def forest_plot(data, auc_col, se_col, to_annotate=None, subset_col=None, fig=No
         estimate of average number of characters per column. Adjust up or down accordingly
     annot_scaler: float, default 0.01
         estimate of the amount by extra/reduced space to give column widths that deviate from annot_offset
+    add_ci: bool, default True
+        Annotate CI after AUC
+    auc_label: str or None, default None
+        Label for the forest plot section
 
     Returns
     -------
@@ -60,25 +64,28 @@ def forest_plot(data, auc_col, se_col, to_annotate=None, subset_col=None, fig=No
 
     # plot auc and 95% CI
     ax = plot_auc(data, ax, auc_col, se_col, subset_col=subset_col, add_legend=add_legend, legend_loc=legend_loc,
-                  xlim=xlim)
+                  xlim=xlim, auc_label=auc_label)
 
     # add all columns in to_annotate as text
     if to_annotate is not None:
         ax = annotate_columns(data, to_annotate, auc_col, se_col, ax, anot_base=anot_base, annot_offset=annot_offset,
-                              annot_scaler=annot_scaler, hbar_lim=hbar_lim)
+                              annot_scaler=annot_scaler, hbar_lim=hbar_lim, add_ci=add_ci, auc_label=auc_label)
 
     return fig, ax
 
 
-def parse_auc(data, row, auc, se_col):
-    auc = '{:.2f} [{:.2f}-{:.2f}]'.format(auc, auc - (1.96 * data.iloc[row, :][se_col]),
-                                          auc + (1.96 * data.iloc[row, :][se_col]))
+def parse_auc(data, row, auc, se_col, add_ci=True):
+    if add_ci:
+        auc = '{:.2f} [{:.2f}-{:.2f}]'.format(auc, auc - (1.96 * data.iloc[row, :][se_col]),
+                                              auc + (1.96 * data.iloc[row, :][se_col]))
+    else:
+        auc = '{:.2f}'.format(auc)
 
     return auc
 
 
 def annotate_columns(data, to_annotate, auc_col, se_col, ax, anot_base=0.15, annot_offset=13, annot_scaler=0.01,
-                     y_offset=0.25, hbar_lim=None):
+                     y_offset=0.25, hbar_lim=None, add_ci=True, auc_label=None):
     xmin, xmax = get_xlim(ax)
     fargs = {'fontsize': 12, 'fontfamily': 'sans-serif', 'clip_on': False}
     to_annotate = [to_annotate] if isinstance(to_annotate, str) else to_annotate
@@ -96,13 +103,17 @@ def annotate_columns(data, to_annotate, auc_col, se_col, ax, anot_base=0.15, ann
             s = data.iloc[txt, :][column]
             if isinstance(s, (float, np.float)) and np.isnan(s):
                 continue
-            s = parse_auc(data, txt, s, se_col) if column == auc_col else s
+            s = parse_auc(data, txt, s, se_col, add_ci) if column == auc_col else s
             x = xmax if column == auc_col else xiter
             y = data.iloc[txt, :]['sort_order'] - y_offset
             ax.text(x=x, y=y, s=s, **fargs)
             if i == 0:
+                auc_label = 'AUC' if auc_label is None else auc_label
                 ax.text(x=x, y=data.shape[0]+0.6, s=column, **fargs)
-                __ = [ax.text(x=aucx, y=data.shape[0]+0.6, s='AUC [95%  CI]', **fargs) for aucx in [xmin, xmax]]
+                if add_ci:
+                    __ = [ax.text(x=aucx, y=data.shape[0]+0.6, s=auc_label + ' [95%  CI]', **fargs) for aucx in [xmin, xmax]]
+                else:
+                    __ = [ax.text(x=aucx, y=data.shape[0]+0.6, s=auc_label, **fargs) for aucx in [xmin, xmax]]
                 column_offsets.append(col_shift)
 
     bars = []
@@ -121,7 +132,7 @@ def annotate_columns(data, to_annotate, auc_col, se_col, ax, anot_base=0.15, ann
 
 
 def plot_auc(data, ax, auc_col, se_col, subset_col=None, colour='#2E5A86', add_vline=True, add_legend=True,
-             legend_loc='upper right', xlim=None):
+             legend_loc='upper right', xlim=None, auc_label=None):
     if subset_col is not None:
         subsets = data[subset_col].unique().tolist() if subset_col in data.columns else None
     else:
@@ -138,10 +149,11 @@ def plot_auc(data, ax, auc_col, se_col, subset_col=None, colour='#2E5A86', add_v
                         fmt=m, label=s, c=colour, elinewidth=0.8,
                         **{'markersize': 7})
     else:
+        auc_label = auc_label if auc_label is not None else 'AUC (95% CI)'
         ax.errorbar(data[auc_col],
                     data['sort_order'],
                     xerr=data[se_col] * 1.96,
-                    fmt='o', label='AUC (95% CI)', c=colour, elinewidth=0.8,
+                    fmt='o', label=auc_label, c=colour, elinewidth=0.8,
                     **{'markersize': 7})
 
     if add_vline:
