@@ -14,7 +14,7 @@ def check_data(data):
 
 def forest_plot(data, auc_col, se_col, to_annotate=None, subset_col=None, fig=None, ax=None, add_legend=True,
                 legend_loc='upper right', hbar_lim=None, xlim=None, fig_shape=None, anot_base=0.15,
-                annot_offset=13, annot_scaler=0.01, add_ci=True, auc_label=None):
+                annot_offset=13, annot_scaler=0.01, add_ci=True, auc_label=None, fargs=None):
     """
     Basic forest plots for meta analyses
 
@@ -54,6 +54,8 @@ def forest_plot(data, auc_col, se_col, to_annotate=None, subset_col=None, fig=No
         Annotate CI after AUC
     auc_label: str or None, default None
         Label for the forest plot section
+    fargs: dict, default None
+         kwargs for fontsizes
 
     Returns
     -------
@@ -69,7 +71,8 @@ def forest_plot(data, auc_col, se_col, to_annotate=None, subset_col=None, fig=No
     # add all columns in to_annotate as text
     if to_annotate is not None:
         ax = annotate_columns(data, to_annotate, auc_col, se_col, ax, anot_base=anot_base, annot_offset=annot_offset,
-                              annot_scaler=annot_scaler, hbar_lim=hbar_lim, add_ci=add_ci, auc_label=auc_label)
+                              annot_scaler=annot_scaler, hbar_lim=hbar_lim, add_ci=add_ci, auc_label=auc_label,
+                              fargs=fargs)
 
     return fig, ax
 
@@ -85,9 +88,9 @@ def parse_auc(data, row, auc, se_col, add_ci=True):
 
 
 def annotate_columns(data, to_annotate, auc_col, se_col, ax, anot_base=0.15, annot_offset=13, annot_scaler=0.01,
-                     y_offset=0.25, hbar_lim=None, add_ci=True, auc_label=None):
+                     y_offset=0.25, hbar_lim=None, add_ci=True, auc_label=None, fargs=None):
     xmin, xmax = get_xlim(ax)
-    fargs = {'fontsize': 12, 'fontfamily': 'sans-serif', 'clip_on': False}
+    fargs = {'fontsize': 12, 'fontfamily': 'sans-serif', 'clip_on': False} if fargs is None else fargs
     to_annotate = [to_annotate] if isinstance(to_annotate, str) else to_annotate
     assert isinstance(to_annotate, list), 'supply annotation column names as a list of strings'
     to_annotate = to_annotate[::-1]
