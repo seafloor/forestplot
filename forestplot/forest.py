@@ -95,6 +95,7 @@ def annotate_columns(data, to_annotate, auc_col, se_col, ax, anot_base=0.15, ann
     assert isinstance(to_annotate, list), 'supply annotation column names as a list of strings'
     to_annotate = to_annotate[::-1]
     column_offsets = []
+    annotations = []
 
     for i, txt in enumerate(np.arange(data.shape[0])):
         xiter = xmin  # moves column annotation outward from plot
@@ -109,20 +110,29 @@ def annotate_columns(data, to_annotate, auc_col, se_col, ax, anot_base=0.15, ann
             s = parse_auc(data, txt, s, se_col, add_ci) if column == auc_col else s
             x = xmax if column == auc_col else xiter
             y = data.iloc[txt, :]['sort_order'] - y_offset
-            ax.text(x=x, y=y, s=s, **fargs)
+            annotations.append(ax.text(x=x, y=y, s=s, **fargs))
             if i == 0:
                 auc_label = 'AUC' if auc_label is None else auc_label
-                ax.text(x=x, y=data.shape[0]+0.6, s=column, **fargs)
+                annotations.append(ax.text(x=x, y=data.shape[0]+0.6, s=column, **fargs))
                 if add_ci:
-                    __ = [ax.text(x=aucx, y=data.shape[0]+0.6, s=auc_label + ' [95%  CI]', **fargs) for aucx in [xmin, xmax]]
+                    __ = [annotations.append(ax.text(x=aucx, y=data.shape[0]+0.6, s=auc_label + ' [95%  CI]', **fargs))
+                          for aucx in [xmin, xmax]]
                 else:
-                    __ = [ax.text(x=aucx, y=data.shape[0]+0.6, s=auc_label, **fargs) for aucx in [xmin, xmax]]
+                    __ = [annotations.append(ax.text(x=aucx, y=data.shape[0]+0.6, s=auc_label, **fargs))
+                          for aucx in [xmin, xmax]]
                 column_offsets.append(col_shift)
 
     bars = []
+    annotations = [a.get_position()[0] for a in annotations]
     if hbar_lim is None:
-        hbar_xmin = 0 - xmin - np.sum(column_offsets) + column_offsets[0]
-        hbar_xmax = 1.22
+        #hbar_xmin = 0 - xmin - np.sum(column_offsets) + column_offsets[0]
+        #hbar_xmax = 1.22
+        if add_ci:
+            max_bar = np.max(annotations) if auc_label is None else np.max(annotations) + 0.009 * len(auc_label + ' [95%  CI]')
+        else:
+            max_bar = np.max(annotations) if auc_label is None else np.max(annotations) + 0.01 * len(auc_label)
+        hbar_xmin, hbar_xmax = np.min(annotations), max_bar
+
     else:
         hbar_xmin, hbar_xmax = hbar_lim
 
@@ -130,6 +140,7 @@ def annotate_columns(data, to_annotate, auc_col, se_col, ax, anot_base=0.15, ann
     for hbar_ypos, line_width in zip([data.shape[0], data.shape[0]+2, -2.8], [1, 2, 2]):
         bars.append(ax.axhline(y=hbar_ypos, xmin=hbar_xmin, xmax=hbar_xmax, linewidth=line_width, **bargs))
     _ = [b.set_clip_on(False) for b in bars]
+    _ = [b.set_transform(ax.transData) for b in bars]
 
     return ax
 
