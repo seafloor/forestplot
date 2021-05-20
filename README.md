@@ -1,6 +1,12 @@
 # forestplot
 Simple forest plots in python with matplotlib
 
+![small_forest_plot](/figures/forest_plot_example.png)
+
+forest_plot is a basic but reasonably flexible function that plots a horizontal scatter and makes use of ax.text() with clip_on set to False. Width of columns can be adjusted using the annot_* args. Plots are setup to generate figures systematic reviews; meta-analysis results were not tested but should work fine by sorting beforehand and passing a custom marker for the meta-analysis results
+
+Horizontal bars should fit to figure width by taking the left and right-most annotation locations from the figure, but the right-hand-side may need adjusting - a tuple can be passed to hbar_lim in this case. If you're saving a figure for publication then the save_fig function can be used for tiffs with lzw compression if needed.
+
 **Required packages**
 - matplotlib
 - numpy
